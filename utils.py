@@ -15,11 +15,13 @@ def send_token_email(register_data: RegisterData, token):
     context = ssl.create_default_context()
     from_address = "notifai.recruitment.app.kp@gmail.com"
     password = "Not$o$ecurePa$$"
-    body = f"""
-            Hello there, [ {register_data.login} ]!
-            here is your login token:
+    body = f"""\
+Subject: Your token for Notif.ai Recruitment App KP
     
-            {token}"""
+Hello there, [ {register_data.login} ]!
+here is your login token:
+    
+{token}"""
 
     with smtplib.SMTP_SSL(server_name, port, context=context) as server:
         server.login(from_address, password)
