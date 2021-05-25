@@ -1,0 +1,15 @@
+CREATE TABLE Message (
+    MessageID INTEGER       PRIMARY KEY AUTOINCREMENT
+                            NOT NULL,
+    UserLogin VARCHAR (30)  NOT NULL ON CONFLICT ROLLBACK,
+    Content   VARCHAR (160) NOT NULL ON CONFLICT ROLLBACK,
+    Counter   INTEGER       NOT NULL
+);
+CREATE TABLE User (
+    UserID INTEGER       PRIMARY KEY AUTOINCREMENT
+                         NOT NULL,
+    Login  VARCHAR (30)  NOT NULL ON CONFLICT ROLLBACK
+                         UNIQUE ON CONFLICT ROLLBACK,
+    Token  VARCHAR (256) NOT NULL ON CONFLICT ROLLBACK
+                         UNIQUE ON CONFLICT ROLLBACK
+);
