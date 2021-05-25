@@ -146,5 +146,6 @@ code_message_counter_update_error = 12  # Cannot update message view counter
 }
 ```
 
+## Database schema
 
-
+[schema_sqllite.sql](https://github.com/MiTRonGTE/notifai_recruitment_app/blob/master/schema_sqllite.sql)
