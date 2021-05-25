@@ -3,10 +3,24 @@ import hashlib
 import smtplib
 import ssl
 from models import RegisterData
+import re
 
 
 def generate_token():
     return hashlib.sha256(f"{randint(0,10000000000)}{randint(0,10000000000)}".encode()).hexdigest()
+
+
+def try_email(email):
+    regex = r'^(\w|.||-)+[@](\w||-|.)+[.]\w{2,3}$'
+    return re.search(regex, email)
+
+
+def create_json_response(status, message, value):
+    return {
+        "status": status,
+        "message": message,
+        "value": value
+    }
 
 
 def send_token_email(register_data: RegisterData, token):

@@ -3,7 +3,7 @@ import sqlite3
 from fastapi.security import HTTPBasic
 from requests.auth import HTTPBasicAuth
 from fastapi.testclient import TestClient
-from main import app
+from main import app, try_email
 
 
 client = TestClient(app)
@@ -32,6 +32,11 @@ auth3 = HTTPBasicAuth(username="test2", password="testtesttesttesttesttesttestte
 auth4 = HTTPBasicAuth(username="badlogin", password="e4dc50a97d0542b78b5b39288fd3a8b85cabf38c4ea72c4c74126bfe187bb360")
 
 
+def test_validate_email():
+    assert try_email("test@gamil.com")
+    assert not try_email("test.com")
+
+
 def test_new_message():
     # Poprawne utworzenie 1 wiedomości testowej
     response = client.post("/message/new", json={"content": "test message 1"}, auth=auth1)
@@ -47,6 +52,13 @@ def test_new_message():
     response = client.post("/message/new", json={"content": ""}, auth=auth1)
     assert response.status_code == 422
 
+    # Zbyt długa wiadomość
+    text_161_char = ""
+    while len(text_161_char) < 161:
+        text_161_char += "a"
+    response = client.post("/message/new", json={"content": text_161_char}, auth=auth1)
+    assert response.status_code == 422
+
     # Błędny token
     response = client.post("/message/new", json={"content": "test message 1"}, auth=auth3)
     assert response.status_code == 406
@@ -58,12 +70,12 @@ def test_new_message():
 
 def test_edit_message():
     # Poprawne edytowanie 1 wiadomości testowej
-    response = client.put(f"/message/edit/{client.message1['message_id']}", json={"content": "test edit 1"},
+    response = client.put(f"/message/edit/{client.message1['value']}", json={"content": "test edit 1"},
                           auth=auth1)
     assert response.status_code == 200
 
     # Poprawne edytowanie 2 wiadomości testowej
-    response = client.put(f"/message/edit/{client.message2['message_id']}", json={"content": "test edit 1"},
+    response = client.put(f"/message/edit/{client.message2['value']}", json={"content": "test edit 1"},
                           auth=auth2)
     assert response.status_code == 200
 
@@ -73,19 +85,19 @@ def test_edit_message():
     assert response.status_code == 406
 
     # Błędny token
-    response = client.put(f"/message/edit/{client.message1['message_id']}", json={"content": "test edit 1"},
+    response = client.put(f"/message/edit/{client.message1['value']}", json={"content": "test edit 1"},
                           auth=auth3)
     assert response.status_code == 406
 
     # Brak użytkowniak w bazie danych
-    response = client.put(f"/message/edit/{client.message1['message_id']}", json={"content": "test edit 1"},
+    response = client.put(f"/message/edit/{client.message1['value']}", json={"content": "test edit 1"},
                           auth=auth4)
     assert response.status_code == 406
 
 
 def test_view_message():
     # poprawne wyświetlenie wiadomości
-    response = client.get(f"/message/view/{client.message1['message_id']}")
+    response = client.get(f"/message/view/{client.message1['value']}")
     assert response.status_code == 200
     assert response.json() == {
         "Author": "test1",
@@ -93,7 +105,7 @@ def test_view_message():
         "Content": "test edit 1"}
 
     # poprawne wyświetlenie wiadomości testowanie zwiększania licznika
-    response = client.get(f"/message/view/{client.message1['message_id']}")
+    response = client.get(f"/message/view/{client.message1['value']}")
     assert response.status_code == 200
     assert response.json() == {
         "Author": "test1",
@@ -101,12 +113,12 @@ def test_view_message():
         "Content": "test edit 1"}
 
     # poprawne wyświetlenie wiadomości testowanie resetowania licznika
-    response = client.put(f"/message/edit/{client.message1['message_id']}", json={"content": "test edit 2"},
+    response = client.put(f"/message/edit/{client.message1['value']}", json={"content": "test edit 2"},
                           auth=auth1)
     assert response.status_code == 200
 
     # poprawne wyświetlenie wiadomości testowanie zwiększania licznika
-    response = client.get(f"/message/view/{client.message1['message_id']}")
+    response = client.get(f"/message/view/{client.message1['value']}")
     assert response.status_code == 200
     assert response.json() == {
         "Author": "test1",
@@ -114,15 +126,15 @@ def test_view_message():
         "Content": "test edit 2"}
 
     # poprawne wyświetlenie wiadomości
-    response = client.get(f"/message/view/{client.message2['message_id']}")
+    response = client.get(f"/message/view/{client.message2['value']}")
     assert response.status_code == 200
 
     # Poprawne usunięcie 2 wiadomości testowe
-    response = client.delete(f"/message/delete/{client.message2['message_id']}", auth=auth2)
+    response = client.delete(f"/message/delete/{client.message2['value']}", auth=auth2)
     assert response.status_code == 200
 
     # Brak wiadomości o danym ID
-    response = client.get(f"/message/view/{client.message2['message_id']}")
+    response = client.get(f"/message/view/{client.message2['value']}")
     assert response.status_code == 406
 
 
@@ -132,14 +144,13 @@ def test_delete_message():
     assert response.status_code == 406
 
     # Brak użytkowniak w bazie danych
-    response = client.delete(f"/message/delete/{client.message1['message_id']}", auth=auth4)
+    response = client.delete(f"/message/delete/{client.message1['value']}", auth=auth4)
     assert response.status_code == 406
 
     # Błędny token
-    response = client.delete(f"/message/delete/{client.message1['message_id']}", auth=auth3)
+    response = client.delete(f"/message/delete/{client.message1['value']}", auth=auth3)
     assert response.status_code == 406
 
     # Poprawne usunięcie 1 wiadomości testowe
-    response = client.delete(f"/message/delete/{client.message1['message_id']}", auth=auth1)
+    response = client.delete(f"/message/delete/{client.message1['value']}", auth=auth1)
     assert response.status_code == 200
-

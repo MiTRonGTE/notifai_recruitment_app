@@ -2,11 +2,12 @@
 
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi import FastAPI, Depends
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import JSONResponse
 import sqlite3
 from utils import *
 from database_operations import *
 from models import *
+from constants import *
 
 
 app = FastAPI()
@@ -27,18 +28,21 @@ async def shutdown():
 
 @app.post('/user/register')
 async def register(register_data: RegisterData):
+    if not try_email(register_data.email):
+        return JSONResponse(status_code=406, content={})
     database_user = get_user(app, register_data.login)
 
     if database_user:
-        return JSONResponse(status_code=406, content={"Error": "User already exists",
-                                                      "username": register_data.login})
-
+        return JSONResponse(status_code=406, content=create_json_response(code_user_already_exists, "User already exists!", register_data.login))
     token = generate_token()
-    add_user(app, register_data.login, token)
+    try:
+        add_user(app, register_data.login, token)
+    except Exception as ex:
+        return JSONResponse(status_code=500, content=create_json_response(code_user_not_created, ex, None))
+
     send_token_email(register_data, token)
 
-    return JSONResponse(status_code=201, content={"Status": "User successfully created",
-                                                  "username": register_data.login})
+    return JSONResponse(status_code=201, content=create_json_response(code_user_created, "User successfully created!", register_data.login))
 
 
 @app.post("/message/new")
@@ -47,14 +51,13 @@ async def new_message(message: Message, credentials: HTTPBasicCredentials = Depe
     token = credentials.password
 
     if not authenticate_user(app, login, token):
-        return JSONResponse(status_code=406, content={"Error": "User does not exist",
-                                                      "username": login})
-
-    add_message(app, login, message.content)
+        return JSONResponse(status_code=406, content=create_json_response(code_user_does_not_exist, "User does not exist!", login))
+    try:
+        add_message(app, login, message.content)
+    except Exception as ex:
+        return JSONResponse(status_code=500, content=create_json_response(code_message_not_created, ex, None))
     database_message = get_last_message_for_user(app, login)
-    return JSONResponse(status_code=201, content={"Status": "Message successfully created",
-                                                  "message_id": database_message[0]})
-
+    return JSONResponse(status_code=201, content=create_json_response(code_message_created, "Message successfully created!", database_message[0]))
 
 
 @app.put('/message/edit/{message_id}')
@@ -63,23 +66,22 @@ async def edit_message(message_id, message: Message, credentials: HTTPBasicCrede
     token = credentials.password
 
     if not authenticate_user(app, login, token):
-        return JSONResponse(status_code=406, content={"Error": "User does not exist",
-                                                      "username": login})
+        return JSONResponse(status_code=406, content=create_json_response(code_user_does_not_exist, "User does not exist!", login))
 
     database_message = get_message(app, message_id)
 
     if not database_message:
-        return JSONResponse(status_code=406, content={"Error": "ID message not found",
-                                                      "message_id": message_id})
+        return JSONResponse(status_code=406, content=create_json_response(code_message_not_found, "Message not found!", message_id))
 
     if login != database_message[1]:
-        return JSONResponse(status_code=406, content={"Error": "Cannot edit message",
-                                                      "message_id": message_id})
+        return JSONResponse(status_code=406, content=create_json_response(code_message_not_edited, "Cannot edit message! Wrong authentication!", message_id))
 
-    update_message(app, message_id, message.content, 0)
+    try:
+        update_message(app, message_id, message.content, 0)
+    except Exception as ex:
+        return JSONResponse(status_code=500, content=create_json_response(code_message_not_edited, ex, message_id))
 
-    return JSONResponse(content={"Status": "Message successfully edited",
-                                 "message_id": message_id})
+    return JSONResponse(content=create_json_response(code_message_edited, "Message successfully edited!", message_id))
 
 
 @app.delete('/message/delete/{message_id}')
@@ -88,34 +90,38 @@ async def delete_massage(message_id, credentials: HTTPBasicCredentials = Depends
     token = credentials.password
 
     if not authenticate_user(app, login, token):
-        return JSONResponse(status_code=406, content={"Error": "User does not exist",
-                                                      "username": login})
+        return JSONResponse(status_code=406,
+                            content=create_json_response(code_user_does_not_exist, "User does not exist!", login))
 
     database_message = get_message(app, message_id)
 
     if not database_message:
-        return JSONResponse(status_code=406, content={"Error": "Message not found",
-                                                      "message_id": message_id})
+        return JSONResponse(status_code=406, content=create_json_response(code_message_not_found, "Message not found!", message_id))
 
     if login != database_message[1]:
-        return JSONResponse(status_code=406, content={"Error": "Cannot delete message",
-                                                      "message_id": message_id})
+        return JSONResponse(status_code=406, content=create_json_response(code_message_not_deleted, "Cannot delete message! Wrong authentication!", message_id))
 
-    delete_message(app, message_id)
-    return JSONResponse(content={"Status": "Message successfully deleted",
-                                 "message_id": message_id})
+    try:
+        delete_message(app, message_id)
+    except Exception as ex:
+        return JSONResponse(status_code=500, content=create_json_response(code_message_not_deleted, ex, message_id))
+
+    return JSONResponse(content=create_json_response(code_message_deleted, "Message successfully deleted!", message_id))
 
 
 @app.get('/message/view/{message_id}')
 async def view_message(message_id):
     database_message = get_message(app, message_id)
     if not database_message:
-        return JSONResponse(status_code=406, content={"Error": "Message not found",
-                                                      "message_id": message_id})
+        return JSONResponse(status_code=406, content=create_json_response(code_message_not_found, "Message not found!", message_id))
 
     message_content = database_message[2]
     message_counter = int(database_message[3]) + 1
-    update_message(app, message_id, message_content, message_counter)
+
+    try:
+        update_message(app, message_id, message_content, message_counter)
+    except Exception as ex:
+        return JSONResponse(status_code=500, content=create_json_response(code_message_counter_update_error, ex, message_id))
 
     return JSONResponse(content={
         "Author": database_message[1],

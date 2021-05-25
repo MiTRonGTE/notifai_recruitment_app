@@ -1,4 +1,4 @@
-from pydantic import BaseModel, constr, NonNegativeInt
+from pydantic import BaseModel, constr
 from typing import Optional
 
 
