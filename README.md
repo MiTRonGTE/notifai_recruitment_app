@@ -1,7 +1,7 @@
 # Notif.ai recruitment app - Kamil Pawlicki
 
 ## Description 
-Recruitment app for Notifai that simulates simple blog
+Recruitment app for Notifai that simulates simple blog can store message to 1 - 160 chars long 
 
 ## Used technologies
 * Python 3.8
@@ -69,7 +69,7 @@ curl -X 'POST' \
   -H 'Authorization: Basic Login&Password=' \
   -H 'Content-Type: application/json' \
   -d '{
-  "content": "Message text"
+  "content": "Message text min = 1 max = 160"
 }'
 ```
 * https://notifai-recruitment-app.herokuapp.com/message/edit/[message_id]
@@ -81,7 +81,7 @@ curl -X 'PUT' \
   -H 'Authorization: Basic Login&Password=' \
   -H 'Content-Type: application/json' \
   -d '{
-  "content": "Edit message text"
+  "content": "Edit message text min = 1 max = 160"
 }'
 ```
 
