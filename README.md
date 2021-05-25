@@ -41,12 +41,16 @@ API docs:
 https://notifai-recruitment-app.herokuapp.com/docs
 
 ## Endpoints
-
-* https://notifai-recruitment-app.herokuapp.com/user/register               Through that endpoint You can register new user
-* https://notifai-recruitment-app.herokuapp.com/message/new                 Through that endpoint You can add new message 
-* https://notifai-recruitment-app.herokuapp.com/message/edit/[message_id]   Through that endpoint You can edit message with given ID
-* https://notifai-recruitment-app.herokuapp.com/message/delete/{message_id} Through that endpoint You can delete message with given ID
-* https://notifai-recruitment-app.herokuapp.com/message/view/{message_id}   Through that endpoint You can view message with given ID
+* Through that endpoint You can register new user. Your token will be sent to your email \
+https://notifai-recruitment-app.herokuapp.com/user/register
+* Through that endpoint You can add new message \
+https://notifai-recruitment-app.herokuapp.com/message/new
+* Through that endpoint You can edit message with given ID \
+https://notifai-recruitment-app.herokuapp.com/message/edit/[message_id]
+* Through that endpoint You can delete message with given ID \
+https://notifai-recruitment-app.herokuapp.com/message/delete/[message_id]
+*  Through that endpoint You can view message with given ID \
+https://notifai-recruitment-app.herokuapp.com/message/view/[message_id]
 
 ## Post data format
 
